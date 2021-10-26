@@ -10,5 +10,5 @@ stamps/requirements: myenv requirements.txt
 	touch $@
 
 run: stamps/requirements
-	./myenv/bin/strawberry server main
+	./myenv/bin/strawberry server schema
 

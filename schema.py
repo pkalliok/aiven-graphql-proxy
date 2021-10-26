@@ -4,6 +4,7 @@ from __future__ import annotations
 import strawberry
 from datetime import datetime
 from enum import Enum
+from typing import Optional
 from uuid import UUID
 
 @strawberry.type
@@ -41,7 +42,7 @@ class BillingDetails:
     emails: list[Email]
     extra_text: str
     payment_method: str  # should probably be enum
-    payment_card: PaymentCard
+    payment_card: Optional[PaymentCard]
 
 @strawberry.type
 class Address:
@@ -84,7 +85,10 @@ class Service:
 
 @strawberry.type
 class Query:
-    project: Project # = strawberry.field(resolver=get_project)
+    @strawberry.field
+    def project(name: str) -> Project:
+        from resolve import get_project
+        return get_project(name)
 
 schema = strawberry.Schema(query=Query)
 
