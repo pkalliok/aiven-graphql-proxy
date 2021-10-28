@@ -19,14 +19,18 @@ auth_token_file_path = (
 auth_token = json.load(open(auth_token_file_path))["auth_token"]
 client.set_auth_token(auth_token)
 
-def get_project_by_name(name: str):
+def get_projects_by_auth() -> list[Project]:
+    projects = client.get_projects()
+    return [convert_project_to_graphql(p) for p in projects]
+
+def get_project_by_name(name: str) -> Project:
     p = client.get_project(name)
     pprint(p)
-    return convert_project_to_graphql({**p, "name": name})
+    return convert_project_to_graphql(p)
 
 def convert_project_to_graphql(p: dict[str,Any]) -> Project:
     return Project(
-        name=p['name'],
+        name=p['project_name'],
         account=Account(
             id=p['account_id'],
             name=p['account_name'],
@@ -54,7 +58,7 @@ def convert_project_to_graphql(p: dict[str,Any]) -> Project:
         estimated_balance=p['estimated_balance'],
         trial_expiration_time=p['trial_expiration_time'],
         default_cloud=p['default_cloud'],
-        features=convert_features_to_graphql(p['features']),
+        features=convert_features_to_graphql(p.get('features')),
         tech_emails=p['tech_emails'],
         tenant_slug=p['tenant_id'],
     )
@@ -74,6 +78,7 @@ def convert_card_to_graphql(card_info: dict[str,Any]) -> PaymentCard:
     )
 
 def convert_features_to_graphql(features: dict[str,Any]) -> list[FeatureFlag]:
+    if not features: return []
     return [FeatureFlag(name=k, enabled=v) for k, v in features.items()]
 
 def list_services_by_project(project: str) -> list[Service]:

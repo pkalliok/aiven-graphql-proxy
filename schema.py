@@ -279,10 +279,17 @@ class ServiceUser:
 
 @strawberry.type
 class Query:
+
+    @strawberry.field
+    def projects() -> list[Project]:
+        from resolve import get_projects_by_auth
+        return get_projects_by_auth()
+
     @strawberry.field
     def project(name: str) -> Project:
         from resolve import get_project_by_name
         return get_project_by_name(name)
+
     @strawberry.field
     def service(project: str, name: str) -> Service:
         from resolve import get_service_by_name
