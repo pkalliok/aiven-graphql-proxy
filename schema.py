@@ -15,6 +15,7 @@ class Project:
     estimated_balance: str
     trial_expiration_time: datetime
     billing: BillingDetails
+    features: list[FeatureFlag]
     default_cloud: str  # should probably be enum
     services: list[Service]
     tech_emails: list[Email]

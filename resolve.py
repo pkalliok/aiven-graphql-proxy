@@ -7,7 +7,7 @@ from aiven.client.envdefault import AIVEN_WEB_URL, AIVEN_CA_CERT, AIVEN_CONFIG_D
 from pprint import pprint
 from typing import Any
 
-from schema import Project, Account, BillingDetails, Address, PaymentCard
+from schema import Project, Account, BillingDetails, Address, PaymentCard, FeatureFlag
 
 client = AivenClient(base_url=(AIVEN_WEB_URL or "https://api.aiven.io"))
 client.set_ca(AIVEN_CA_CERT)
@@ -53,6 +53,7 @@ def convert_project_to_graphql(p: dict[str,Any]) -> Project:
         estimated_balance=p['estimated_balance'],
         trial_expiration_time=p['trial_expiration_time'],
         default_cloud=p['default_cloud'],
+        features=convert_features_to_graphql(p['features']),
         tech_emails=p['tech_emails'],
         services=[],
         tenant_slug=p['tenant_id'],
@@ -71,4 +72,7 @@ def convert_card_to_graphql(card_info: dict[str,Any]) -> PaymentCard:
         name=card_info['name'],
         user_email=card_info['user_email']
     )
+
+def convert_features_to_graphql(features: dict[str,Any]) -> list[FeatureFlag]:
+    return [FeatureFlag(name=k, enabled=v) for k, v in features.items()]
 
