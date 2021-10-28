@@ -17,9 +17,16 @@ class Project:
     billing: BillingDetails
     features: list[FeatureFlag]
     default_cloud: str  # should probably be enum
-    services: list[Service]
     tech_emails: list[Email]
     tenant_slug: str  # tenant_id, should probably be enum
+
+    @strawberry.field
+    def services(self: Project, name: Optional[str] = None) -> list[Service]:
+        from resolve import get_service_by_name, list_services_by_project
+        if name is not None:
+            return [get_service_by_name(self.name, name)]
+        else:
+            return list_services_by_project(self.name)
 
 @strawberry.type
 class Account:
@@ -83,7 +90,7 @@ class Service:
     cloud: Cloud
     # connection_info: Union[PgConnection,...] # including service_uri_params
     create_time: datetime
-    features: list[FeatureFlag] # including termination_protection
+    features: list[FeatureFlag]
     maintenance: MaintenanceInfo
     metadata: list[MetadataItem]
     node_states: list[Node]
@@ -93,13 +100,18 @@ class Service:
     notifications: list[UserNotification]
     resources: ServiceResources
     service_parameters: ServiceParameters
-    service_type: ServiceType # service_type, service_type_description
+    service_type: ServiceType
     service_uri: str
     state: ServiceState # should be enum
     update_time: datetime
     # user_config: Union[PgUserConfig,...]
     name: str # service_name
-    project: Project
+    project_name: str # this should be private, how to achieve that?
+
+    @strawberry.field
+    def project(self: Service) -> Project:
+        from resolve import get_project_by_name
+        return get_project_by_name(self.project_name)
 
 @strawberry.enum
 class ServiceState(Enum):
@@ -244,6 +256,7 @@ class ServiceResources:
     components: list[ServiceComponent]
     # connection_pools: list[ConnectionPool]
     databases: list[str]
+    # topics: list[KafkaTopic]
     users: list[ServiceUser]
 
 @strawberry.type

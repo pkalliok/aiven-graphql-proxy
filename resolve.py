@@ -56,7 +56,6 @@ def convert_project_to_graphql(p: dict[str,Any]) -> Project:
         default_cloud=p['default_cloud'],
         features=convert_features_to_graphql(p['features']),
         tech_emails=p['tech_emails'],
-        services=[],
         tenant_slug=p['tenant_id'],
     )
 
@@ -77,10 +76,14 @@ def convert_card_to_graphql(card_info: dict[str,Any]) -> PaymentCard:
 def convert_features_to_graphql(features: dict[str,Any]) -> list[FeatureFlag]:
     return [FeatureFlag(name=k, enabled=v) for k, v in features.items()]
 
+def list_services_by_project(project: str) -> list[Service]:
+    services = client.get_services(project)
+    return [convert_service_to_graphql({**s, "project_name": project}) for s in services]
+
 def get_service_by_name(project: str, name: str) -> Service:
     s = client.get_service(project, name)
     pprint(s)
-    return convert_service_to_graphql({**s, "project": project})
+    return convert_service_to_graphql({**s, "project_name": project})
 
 def convert_service_to_graphql(s):
     cloud = Cloud(
@@ -90,8 +93,8 @@ def convert_service_to_graphql(s):
     resources = ServiceResources(
         backups = s.pop("backups"),
         components = s.pop("components"),
-        databases = s.pop("databases"),
-        users = s.pop("users"),
+        databases = s.pop("databases", []),
+        users = s.pop("users", []),
     )
     parameters = ServiceParameters(
         disk_space_mb = s.pop("disk_space_mb"),
@@ -109,11 +112,13 @@ def convert_service_to_graphql(s):
     integrations = s.pop("service_integrations")
     name = s.pop("service_name")
     notifications = s.pop("service_notifications")
-    s.pop("connection_info")
-    s.pop("connection_pools")
-    s.pop("group_list")
-    s.pop("service_uri_params")
-    s.pop("user_config")
+    s.pop("acl", None)
+    s.pop("connection_info", None)
+    s.pop("connection_pools", None)
+    s.pop("group_list", None)
+    s.pop("service_uri_params", None)
+    s.pop("topics", None)
+    s.pop("user_config", None)
 
     return Service(**s,
         project_vpc=vpc,
