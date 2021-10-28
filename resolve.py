@@ -7,7 +7,8 @@ from aiven.client.envdefault import AIVEN_WEB_URL, AIVEN_CA_CERT, AIVEN_CONFIG_D
 from pprint import pprint
 from typing import Any
 
-from schema import Project, Account, BillingDetails, Address, PaymentCard, FeatureFlag
+from schema import (Project, Account, BillingDetails, Address, PaymentCard, FeatureFlag,
+    Cloud, Service, ServiceParameters, ServiceResources, ServiceType)
 
 client = AivenClient(base_url=(AIVEN_WEB_URL or "https://api.aiven.io"))
 client.set_ca(AIVEN_CA_CERT)
@@ -18,7 +19,7 @@ auth_token_file_path = (
 auth_token = json.load(open(auth_token_file_path))["auth_token"]
 client.set_auth_token(auth_token)
 
-def get_project(name: str):
+def get_project_by_name(name: str):
     p = client.get_project(name)
     pprint(p)
     return convert_project_to_graphql({**p, "name": name})
@@ -75,4 +76,54 @@ def convert_card_to_graphql(card_info: dict[str,Any]) -> PaymentCard:
 
 def convert_features_to_graphql(features: dict[str,Any]) -> list[FeatureFlag]:
     return [FeatureFlag(name=k, enabled=v) for k, v in features.items()]
+
+def get_service_by_name(project: str, name: str) -> Service:
+    s = client.get_service(project, name)
+    pprint(s)
+    return convert_service_to_graphql({**s, "project": project})
+
+def convert_service_to_graphql(s):
+    cloud = Cloud(
+        slug = s.pop("cloud_name"),
+        description = s.pop("cloud_description"),
+    )
+    resources = ServiceResources(
+        backups = s.pop("backups"),
+        components = s.pop("components"),
+        databases = s.pop("databases"),
+        users = s.pop("users"),
+    )
+    parameters = ServiceParameters(
+        disk_space_mb = s.pop("disk_space_mb"),
+        node_count = s.pop("node_count"),
+        node_cpu_count = s.pop("node_cpu_count"),
+        node_memory_mb = s.pop("node_memory_mb"),
+    )
+    stype = ServiceType(
+        name = s.pop("service_type"),
+        description = s.pop("service_type_description"),
+    )
+    features = convert_features_to_graphql({**s.pop("features"),
+        "termination_protection": s.pop("termination_protection")})
+    vpc = s.pop("project_vpc_id")
+    integrations = s.pop("service_integrations")
+    name = s.pop("service_name")
+    notifications = s.pop("service_notifications")
+    s.pop("connection_info")
+    s.pop("connection_pools")
+    s.pop("group_list")
+    s.pop("service_uri_params")
+    s.pop("user_config")
+
+    return Service(**s,
+        project_vpc=vpc,
+        cloud=cloud,
+        features=features,
+        name=name,
+        integrations=integrations,
+        notifications=notifications,
+        resources=resources,
+        service_parameters=parameters,
+        service_type=stype,
+    )
 

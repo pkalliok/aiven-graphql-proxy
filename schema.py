@@ -268,8 +268,12 @@ class ServiceUser:
 class Query:
     @strawberry.field
     def project(name: str) -> Project:
-        from resolve import get_project
-        return get_project(name)
+        from resolve import get_project_by_name
+        return get_project_by_name(name)
+    @strawberry.field
+    def service(project: str, name: str) -> Service:
+        from resolve import get_service_by_name
+        return get_service_by_name(project, name)
 
 schema = strawberry.Schema(query=Query)
 
